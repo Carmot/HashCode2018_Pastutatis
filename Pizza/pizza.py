@@ -24,7 +24,7 @@ vienes porque no incluían ese ingrediente.
 
 """
 FIGURES = [[1, 2], [1, 3], [1, 4], [1, 5], [2, 3], [3, 2]]
-L = 1;
+L = 1
 
 class Pizza:
     def __init__(self, values):
@@ -46,6 +46,41 @@ class Pizza:
 
     def cut(self):
         print("Cutting pizza...")
+
+
+
+def cut_first_approach(matrix, slice_list):
+    """
+    1.- Iterar por toda la matriz
+    2.- Elegir primera celda.
+    3.- Comprobar que esa celda no esté cortada ya, es decir, no pertenezca a la solución.
+    4.- Seleccionar figura a aplicar, mayor prioridad más grande.
+    5.- Comprobar que la figura a aplicar cumple los mínimos de ingredientes
+    6.- Añadir la porción a slice_list y volver a llamar a la función.
+    7.- Si en un caso no se puede aplicar ninguna figura pasamos a la siguiente celda hasta la última de la matriz.
+    :param matrix:
+    :param slice_list:
+    :return:
+    """
+    for row, indexX in enumerate(matrix):
+            for cell, indexY in enumerate(row):
+                if is_not_in_a_slice(indexX, indexY, slice_list):
+                    pass
+
+
+def is_not_in_a_slice(x, y, slice_list):
+    """
+    Return true if cell(x,y) is not in any rectangle define by slice_list
+    :param x:
+    :param y:
+    :param slice_list: -> [ [[r1,r2], [c1,c2]], [[r3,r4],[c3,c4]], ...]
+    :return:
+    :rtype: boolean
+    """
+    for slice in slice_list:
+        if slice[0][0] >= x & x >= slice[0][1] & slice[1][0] >= y & y >= slice[1][1]:
+            return False
+    return True
 
 
 def validate_slice(slice, L):
@@ -73,20 +108,20 @@ def validate_slice(slice, L):
 
 def validate(matrix, x, y, slice_list):
     print("Validating pizza...")
-    for r, c in FIGURES:
-        try:
-            matrix[x+r][y+c]
-        except IndexError:
-            pass
-        else:
-            slice = []
-            for row in matrix[x:r]:
-                for item in row[y:c]:
-                    slice.append(item)
-            if validate_slice(slice, L):
-                slice_list.append(slice)
-                validate(matrix, x+r, y+c, slice_list)
-                break
+    # for r, c in FIGURES:
+    #     try:
+    #         matrix[x+r][y+c]
+    #     except IndexError:
+    #         pass
+    #     else:
+    #         slice = []
+    #         for row in matrix[x:r]:
+    #             for item in row[y:c]:
+    #                 slice.append(item)
+    #         if validate_slice(slice, L):
+    #             slice_list.append(slice)
+    #             validate(matrix, x+r, y+c, slice_list)
+    #             break
 
 
 if __name__ == '__main__':
