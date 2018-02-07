@@ -52,16 +52,21 @@ class Pizza:
         return ''
 
     def figure_Cmp(self, figure1, figure2):
-        if abs(figure1[0] - figure1[1]) < abs(figure2[0] - figure2[1]):
+        # El cacho más grande primero
+        if (figure1[0] * figure1[1]) > (figure2[0] * figure2[1]):
+            return 1
+        elif (figure1[0] * figure1[1]) < (figure2[0] * figure2[1]):
+            return -1
+        # Si están empatados buscamos el más cuadrado
+        elif abs(figure1[0] - figure1[1]) < abs(figure2[0] - figure2[1]):
             return 1
         elif abs(figure1[0] - figure1[1]) > abs(figure2[0] - figure2[1]):
             return -1
-        elif (figure1[0] + figure1[1]) > (figure2[0] + figure2[1]):
+        # Si siguen empatados buscamos empezar por el que mas ocupe del total
+        elif min(abs(self.c - figure1[1]), abs(self.r - figure1[0])) <= min(abs(self.c - figure2[1]), abs(self.r - figure2[0])):
             return 1
-        elif (figure1[0] + figure1[1]) < (figure2[0] + figure2[1]):
-            return -1
         else:
-            return 0
+            return -1
             
 
     def is_figure(self, x, y):
@@ -95,10 +100,10 @@ class Pizza:
         5.- Añadir la porción a slice_list y volver a llamar a la función.
         6.- Si en un caso no se puede aplicar ninguna figura pasamos a la siguiente celda hasta la última de la matriz.
         """
-        for x in range(0, self.c):
-            for y in range(0, self.r):
+        for x in range(0, self.c + 1):
+            for y in range(0, self.r + 1):
                 # Hemos llegado al final de la matriz
-                if (x >= self.c-1) & (y >= self.r-1):
+                if (x >= self.c) & (y >= self.r):
                     print_result(self.slice_list)
                     calculate_score(self.slice_list)
                 else:
@@ -106,7 +111,7 @@ class Pizza:
                         for figure in self.figures:
                             if self.can_cut_slice(x, y, figure):
                                 # Add Figure to slice_list
-                                self.slice_list.append([[y, x], [y+figure[1]-1, x+figure[0]-1]])
+                                self.slice_list.append([[y, x], [y+figure[0]-1, x+figure[1]-1]])
                                 break
 
     def next_cell(self, column, row):
@@ -127,12 +132,12 @@ class Pizza:
         """
         count_tomatoes = 0
         count_mushrooms = 0
-        for indexX in range(x, x + slice[0]):
-            for indexY in range(y, y + slice[1]):
+        for indexX in range(x, x + slice[1]):
+            for indexY in range(y, y + slice[0]):
                 if self.p[indexY][indexX] == 'T':
-                    count_tomatoes = + 1
+                    count_tomatoes = count_tomatoes + 1
                 elif self.p[indexY][indexX] == 'M':
-                    count_mushrooms = + 1
+                    count_mushrooms = count_mushrooms + 1
                 else:
                     print("Found a strange ingredient in the pizza: ", self.p[indexY][indexX])
         return count_tomatoes >= self.l & count_mushrooms >= self.l
@@ -140,14 +145,14 @@ class Pizza:
     def all_cells_are_free(self, x, y, figure):
         # x + figure[0] & y + figure[1]
         # no estan en slice_list
-        for indexX in range(x, x + figure[0]):
-            for indexY in range(y, y + figure[1]):
+        for indexX in range(x, x + figure[1]):
+            for indexY in range(y, y + figure[0]):
                 if self.is_in_solution(indexX, indexY):
                     return False
         return True
 
     def can_cut_slice(self, x, y, figure):
-        if (((x + figure[0]) >= self.c) | ((y + figure[1]) >= self.r)):
+        if (((x + figure[1]) > self.c) | ((y + figure[0]) > self.r)):
             return False
         else:
             if not self.has_enough_ingredients(x, y, figure):
