@@ -3,7 +3,6 @@
 
 import sys
 import argparse
-import random
 
 """
 NOTAS:
@@ -38,6 +37,7 @@ class Pizza:
         self.l = int(values[2])
         self.h = int(values[3])
         self.p = [[0 for x in range(self.c)] for y in range(self.r)]
+        self.px = [[0 for x in range(self.c)] for y in range(self.r)]
         self.figures = []
         self.slice_list = []
 
@@ -84,8 +84,6 @@ class Pizza:
                         self.figures.append([i, j])
                     if not self.is_figure(j,i):
                         self.figures.append([j, i])
-        #random.shuffle(self.figures)
-        #sorted(self.figures, key=self.figure_Total, reverse=False)
         self.figures.sort(self.figure_Cmp, reverse = True)
 
     def cut(self):
@@ -100,19 +98,26 @@ class Pizza:
         5.- Añadir la porción a slice_list y volver a llamar a la función.
         6.- Si en un caso no se puede aplicar ninguna figura pasamos a la siguiente celda hasta la última de la matriz.
         """
-        for x in range(0, self.c + 1):
-            for y in range(0, self.r + 1):
+        for x in range(0, self.c):
+            for y in range(0, self.r):
                 # Hemos llegado al final de la matriz
-                if (x >= self.c) & (y >= self.r):
+                if (x >= (self.c - 1)) & (y >= (self.r - 1)):
                     print_result(self.slice_list)
-                    calculate_score(self.slice_list)
+                    #calculate_score(self.slice_list)
                 else:
                     if not self.is_in_solution(x, y):
                         for figure in self.figures:
                             if self.can_cut_slice(x, y, figure):
                                 # Add Figure to slice_list
+                                self.add_slice_to_solution([[y, x], [y+figure[0]-1, x+figure[1]-1]])
                                 self.slice_list.append([[y, x], [y+figure[0]-1, x+figure[1]-1]])
                                 break
+
+    def add_slice_to_solution(self, slice):
+        for i in range(slice[0][0], slice[1][0] + 1):
+            for j in range(slice[0][1], slice[1][1] + 1):
+                self.px[i][j] = 1
+        return
 
     def next_cell(self, column, row):
         if column == self.c-1:
@@ -162,18 +167,10 @@ class Pizza:
             return True
 
     def is_in_solution(self, x, y):
-        """
-        Return true if cell(x,y) is in any rectangle define by slice_list
-        :param x:
-        :param y:
-        :param slice_list: -> [ [[r1,r2], [c1,c2]], [[r3,r4],[c3,c4]], ...]
-        :return:
-        :rtype: boolean
-        """
-        for slice in self.slice_list:
-            if (x >= slice[0][1]) & (x <= slice[1][1]) & (y >= slice[0][0]) & (y <= slice[1][0]):
-                return True
-        return False
+        if self.px[y][x] == 1:
+            return True
+        else:
+            return False
 
 def print_result(result):
     sys.stdout = open(outFileName, "w")
@@ -194,7 +191,7 @@ def calculate_score(result):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Cuts pizza.')
-    parser.add_argument("-f", "--file", default='medium.in', type=argparse.FileType('r'), help='Filename with input data')
+    parser.add_argument("-f", "--file", default='example.in', type=argparse.FileType('r'), help='Filename with input data')
     args = parser.parse_args()
     lines = args.file.readlines()
     pizza = Pizza(lines[0].split())
