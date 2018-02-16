@@ -45,9 +45,9 @@ class Pizza:
         print("Columns: ", self.c)
         print("Min ingredients: ", self.l)
         print("Max cells/slice: ", self.h)
-        print("Matrix: ")
+        print "Matrix: "
         for row in self.p:
-            print(row)
+            print row
         return ''
 
     def figure_Cmp(self, figure1, figure2):
@@ -65,11 +65,11 @@ class Pizza:
         elif min(abs(self.cx - figure1[1]), abs(self.rx - figure1[0])) <= min(abs(self.cx - figure2[1]), abs(self.rx - figure2[0])):
             return 1
         else:
-            return -1            
+            return -1
 
     def is_figure(self, x, y):
         for element in self.figures:
-            if ((element[0] == x) & (element[1] == y)):
+            if (element[0] == x) & (element[1] == y):
                 return True
         return False
 
@@ -77,17 +77,17 @@ class Pizza:
         minim = min(self.r, self.c, self.h)
         for i in range(1, minim + 1):
             for j in range(1, self.h + 1):
-                if ((self.h % i == 0) & (i*j >= 2*self.l) & (i*j <= self.h)):
-                    if not self.is_figure(i,j):
+                if (self.h % i == 0) & (i*j >= 2*self.l) & (i*j <= self.h):
+                    if not self.is_figure(i, j):
                         self.figures.append([i, j])
-                    if not self.is_figure(j,i):
+                    if not self.is_figure(j, i):
                         self.figures.append([j, i])
-        self.figures.sort(self.figure_Cmp, reverse = True)
+        self.figures.sort(self.figure_Cmp, reverse=True)
 
     def cut(self):
-        print("Cutting pizza...")
+        print "Cutting pizza..."
 
-    def cut_first_approach(self, x, y):
+    def cut_first_approach(self):
         """
         1.- Comprobar que no hemos llegado al final de la matriz
         2.- Comprobar que esa celda no esté cortada ya, es decir, no pertenezca a la solución.
@@ -106,7 +106,7 @@ class Pizza:
                 else:
                     if not self.is_in_solution(x, y):
                         self.rx = self.r - y
-                        self.figures.sort(self.figure_Cmp, reverse = True)
+                        self.figures.sort(self.figure_Cmp, reverse=True)
                         for figure in self.figures:
                             if self.can_cut_slice(x, y, figure):
                                 # Add Figure to slice_list
@@ -158,7 +158,7 @@ class Pizza:
         return True
 
     def can_cut_slice(self, x, y, figure):
-        if (((x + figure[1]) > self.c) | ((y + figure[0]) > self.r)):
+        if ((x + figure[1]) > self.c) | ((y + figure[0]) > self.r):
             return False
         else:
             if not self.has_enough_ingredients(x, y, figure):
@@ -200,4 +200,4 @@ if __name__ == '__main__':
     args.file.close()
     outFileName = args.file.name.split(".")[0] + ".out"
     pizza.create_figures()
-    pizza.cut_first_approach(0, 0)
+    pizza.cut_first_approach()
