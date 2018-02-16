@@ -19,9 +19,6 @@ Figuras posibles = 1x4 y 2x2
 l=1; h=6
 Figuras posibles = 1x2, 1x3, 1x4, 1x5, 1x6, 2x2 y 2x3
 Obviamente si r*c es 5*3, la figura 1x6 no tendría sentido, se descartaría comprobando el tamaño de la matriz
-Se podría resolver recursivamente (de manera no eficiente)  probando cada una de las figuras desde la posición [0,0] y
-llamando a la función con la matrix recortada. Creo que es una explosión de combinatoria demasiado tocha para casos
-grandes.
 
 Opción 2:
 Contar los ingredientes y empezar a cortar la pizza utilizando el ingrediente minoritario. Recorres la matriz hasta que
@@ -33,7 +30,9 @@ vienes porque no incluían ese ingrediente.
 class Pizza:
     def __init__(self, values):
         self.r = int(values[0])
+        self.rx = self.r
         self.c = int(values[1])
+        self.cx = self.c
         self.l = int(values[2])
         self.h = int(values[3])
         self.p = [[0 for x in range(self.c)] for y in range(self.r)]
@@ -63,11 +62,10 @@ class Pizza:
         elif abs(figure1[0] - figure1[1]) > abs(figure2[0] - figure2[1]):
             return -1
         # Si siguen empatados buscamos empezar por el que mas ocupe del total
-        elif min(abs(self.c - figure1[1]), abs(self.r - figure1[0])) <= min(abs(self.c - figure2[1]), abs(self.r - figure2[0])):
+        elif min(abs(self.cx - figure1[1]), abs(self.rx - figure1[0])) <= min(abs(self.cx - figure2[1]), abs(self.rx - figure2[0])):
             return 1
         else:
-            return -1
-            
+            return -1            
 
     def is_figure(self, x, y):
         for element in self.figures:
@@ -95,10 +93,11 @@ class Pizza:
         2.- Comprobar que esa celda no esté cortada ya, es decir, no pertenezca a la solución.
         3.- Seleccionar figura a aplicar, mayor prioridad más grande.
         4.- Comprobar que la figura a aplicar cumple los mínimos de ingredientes
-        5.- Añadir la porción a slice_list y volver a llamar a la función.
+        5.- Añadir la porción a slice_list
         6.- Si en un caso no se puede aplicar ninguna figura pasamos a la siguiente celda hasta la última de la matriz.
         """
         for x in range(0, self.c):
+            self.cx = self.c - x
             for y in range(0, self.r):
                 # Hemos llegado al final de la matriz
                 if (x >= (self.c - 1)) & (y >= (self.r - 1)):
@@ -106,6 +105,8 @@ class Pizza:
                     #calculate_score(self.slice_list)
                 else:
                     if not self.is_in_solution(x, y):
+                        self.rx = self.r - y
+                        self.figures.sort(self.figure_Cmp, reverse = True)
                         for figure in self.figures:
                             if self.can_cut_slice(x, y, figure):
                                 # Add Figure to slice_list
@@ -167,10 +168,7 @@ class Pizza:
             return True
 
     def is_in_solution(self, x, y):
-        if self.px[y][x] == 1:
-            return True
-        else:
-            return False
+        return self.px[y][x] == 1
 
 def print_result(result):
     sys.stdout = open(outFileName, "w")
