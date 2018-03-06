@@ -45,54 +45,46 @@ class Problem:
         print("Steps: ", self.t)
 
     def Ride_Cmp(self, ride1, ride2):
-        # El cacho más grande primero
-        if (ride1[0] * ride1[1]) > (ride2[0] * ride2[1]):
+        if ride1.early < ride2.early:
             return 1
-        elif (ride1[0] * ride1[1]) < (ride2[0] * ride2[1]):
-            return -1
-        # Si están empatados buscamos el más cuadrado
-        elif abs(ride1[0] - ride1[1]) < abs(ride2[0] - ride2[1]):
+        if (ride1.start[0] + ride1.start[1]) < (ride2.start[0] + ride2.start[1]):
             return 1
-        elif abs(ride1[0] - ride1[1]) > abs(ride2[0] - ride2[1]):
-            return -1
-        # Si siguen empatados buscamos empezar por el que mas ocupe del total
-        elif min(abs(self.cx - ride1[1]), abs(self.rx - ride1[0])) <= min(abs(self.cx - ride2[1]), abs(self.rx - ride2[0])):
+        elif ride1.latest < ride2.latest:
+            return 1
+        elif (ride1.latest - ride1.early) < (ride2.latest - ride2.early):
             return 1
         else:
             return -1
 
     def calculate_route(self):
-        #self.Rides.sort(self.Ride_Cmp, reverse=True)
+        self.Rides.sort(self.Ride_Cmp, reverse=True)
         steps = 0
-        while (steps < self.b):
+        while (steps < self.t):
             """
             1. Asigno rutas a coches
             2. Avanzo para completar todas las rutas
             3. Vuelvo a empezar hasta que complete el máximo número de steps
             """
-            for index in range(0, min(self.f, self.n)):
-                self.Vehicles[index].cride.append(self.Rides[index])
+            for index in range(0, min(self.f, len(self.Rides))):
+                self.Vehicles[index].cride.append(self.Rides[0])
                 self.Vehicles[index].n = self.Vehicles[index].n + 1
-                self.Rides.pop()
-            max = 0
+                self.Rides.remove(self.Rides[0])
+            mn = self.b
             for nv in range(0, self.f):
                 it = self.Vehicles[nv].n - 1
                 tmp = abs(self.Vehicles[nv].location[0] - self.Vehicles[nv].cride[it].end[0]) + abs(self.Vehicles[nv].location[1] - self.Vehicles[nv].cride[it].end[1])
-                if (tmp > max):
-                    max = tmp
-            steps = steps + max
+                if (tmp < mn):
+                    mn = tmp
+            steps = steps + mn
         return self.Vehicles
 
 def print_result(result, o):
-    tmp = ''
     for v in result:
-        tmp = tmp + str(v.n)
+        o.write(str(v.n))
         for r in v.cride:
-            tmp = tmp + " "
-            tmp = tmp + str(r.number),
-        o.write(tmp[0])
+            o.write(" ")
+            o.write(str(r.number))
         o.write('\n')
-        tmp = ''
     o.close()
 
 def calculate_score(result):
@@ -102,11 +94,11 @@ def calculate_score(result):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculating routes.')
-    #parser.add_argument("-f", "--file", default='c:\\Users\\jagariburo\\Documents\\Google Hash Code 2018\\HashCode2018_Pastutatis\\Selfdriving cars\\a_example.in', type=argparse.FileType('r'), help='Filename with input data')
+    parser.add_argument("-f", "--file", default='c:\\Users\\jagariburo\\Documents\\Google Hash Code 2018\\HashCode2018_Pastutatis\\Selfdriving cars\\a_example.in', type=argparse.FileType('r'), help='Filename with input data')
     #parser.add_argument("-f", "--file", default='c:\\Users\\jagariburo\\Documents\\Google Hash Code 2018\\HashCode2018_Pastutatis\\Selfdriving cars\\b_should_be_easy.in', type=argparse.FileType('r'), help='Filename with input data')
     #parser.add_argument("-f", "--file", default='c:\\Users\\jagariburo\\Documents\\Google Hash Code 2018\\HashCode2018_Pastutatis\\Selfdriving cars\\c_no_hurry.in', type=argparse.FileType('r'), help='Filename with input data')
     #parser.add_argument("-f", "--file", default='c:\\Users\\jagariburo\\Documents\\Google Hash Code 2018\\HashCode2018_Pastutatis\\Selfdriving cars\\d_metropolis.in', type=argparse.FileType('r'), help='Filename with input data')
-    parser.add_argument("-f", "--file", default='c:\\Users\\jagariburo\\Documents\\Google Hash Code 2018\\HashCode2018_Pastutatis\\Selfdriving cars\\e_high_bonus.in', type=argparse.FileType('r'), help='Filename with input data')
+    #parser.add_argument("-f", "--file", default='c:\\Users\\jagariburo\\Documents\\Google Hash Code 2018\\HashCode2018_Pastutatis\\Selfdriving cars\\e_high_bonus.in', type=argparse.FileType('r'), help='Filename with input data')
     args = parser.parse_args()
     outFile = open(args.file.name.split(".")[0] + ".out", "w")
     lines = args.file.readlines()
