@@ -4,6 +4,8 @@
 import sys
 import argparse
 
+import matplotlib.pyplot as plt
+
 """
 NOTAS:
 Es importante tener en cuenta que si la partición tiene más de una fila, todas las filas deben tener el mismo número de
@@ -37,8 +39,11 @@ class Pizza:
         self.h = int(values[3])
         self.p = [[0 for x in range(self.c)] for y in range(self.r)]
         self.px = [[0 for x in range(self.c)] for y in range(self.r)]
+        self.pxr = [[0 for x in range(self.c)] for y in range(self.r)]
         self.figures = []
+        self.figures_r = []
         self.slice_list = []
+        self.slice_list_r = []
 
     def __str__(self):
         print("Rows: ", self.r)
@@ -67,6 +72,26 @@ class Pizza:
         else:
             return -1
 
+    def figure_CmpLim(self, figure1, figure2):
+        # Miramos que no se salga de los limites
+        if ((self.cx - figure1[1]) > -1) & ((self.rx - figure1[0]) > -1) & ((self.cx - figure2[1]) > -1) & ((self.rx - figure2[0]) > -1):
+            if (figure1[0] * figure1[1]) > (figure2[0] * figure2[1]):
+                return 1
+            elif (figure1[0] * figure1[1]) < (figure2[0] * figure2[1]):
+                return -1
+            # Si están empatados buscamos el más cuadrado
+            elif abs(figure1[0] - figure1[1]) < abs(figure2[0] - figure2[1]):
+                return 1
+            elif abs(figure1[0] - figure1[1]) > abs(figure2[0] - figure2[1]):
+                return -1
+            # Si siguen empatados buscamos empezar por el que mas ocupe del total
+            elif min(abs(self.cx - figure1[1]), abs(self.rx - figure1[0])) <= min(abs(self.cx - figure2[1]), abs(self.rx - figure2[0])):
+                return 1
+            else:
+                return -1
+        else:
+            return 0
+
     def is_figure(self, x, y):
         for element in self.figures:
             if (element[0] == x) & (element[1] == y):
@@ -85,7 +110,77 @@ class Pizza:
         self.figures.sort(self.figure_Cmp, reverse=True)
 
     def cut(self):
-        print "Cutting pizza..."
+        """
+        1.- Comprobar que no hemos llegado al final de la matriz
+        2.- Comprobar que esa celda no esté cortada ya, es decir, no pertenezca a la solución.
+        3.- Seleccionar figura a aplicar, mayor prioridad más grande.
+        4.- Comprobar que la figura a aplicar cumple los mínimos de ingredientes
+        5.- Añadir la porción a slice_list
+        6.- Si en un caso no se puede aplicar ninguna figura pasamos a la siguiente celda hasta la última de la matriz.
+        """
+        for x in range(0, self.c):
+            self.cx = self.c - x
+            for y in range(0, self.r):
+                # Hemos llegado al final de la matriz
+                if (x >= (self.c - 1)) & (y >= (self.r - 1)):
+                    # Reducir slices
+                    self.reduce_slices()
+                    calculate_score(self.slice_list)
+                    calculate_score(self.slice_list_r)
+                    print_result(self.slice_list_r)                            
+                else:
+                    if not self.is_in_solution(x, y):
+                        self.rx = self.r - y
+                        self.figures.sort(self.figure_CmpLim, reverse=True)
+                        for figure in self.figures:
+                            if self.can_cut_slice(x, y, figure):
+                                # Add Figure to slice_list
+                                self.add_slice_to_solution([[y, x], [y+figure[0]-1, x+figure[1]-1]])
+                                self.add_slice_to_solution_r([[y, x], [y+figure[0]-1, x+figure[1]-1]])
+                                self.slice_list.append([[y, x], [y+figure[0]-1, x+figure[1]-1]])
+                                break
+
+    def reduce_slices(self):
+        for s in self.slice_list:
+            jump = False
+            count_tomatoes = 0
+            count_mushrooms = 0
+            count_x = 0
+            count_y = 0
+            for indexX in range(s[0][1], s[1][1] + 1):
+                count_x = indexX
+                for indexY in range(s[0][0], s[1][0] + 1):
+                    count_y = indexY
+                    if self.p[indexY][indexX] == 'T':
+                        count_tomatoes = count_tomatoes + 1
+                    elif self.p[indexY][indexX] == 'M':
+                        count_mushrooms = count_mushrooms + 1
+                    else:
+                        print("Found a strange ingredient in the pizza: ", self.p[indexY][indexX])
+                    if ((count_tomatoes >= self.l) & (count_mushrooms == self.l)) | ((count_tomatoes == self.l) & (count_mushrooms >= self.l)):
+                        jump = True
+                        break
+                if (jump):
+                    break
+            if (jump & (count_x < s[1][1])):
+                #Poner vacio el cacho que hemos dejado
+                self.empty_space(s)
+                #Ver si podemos cortar
+                for figure in self.figures:
+                    if self.can_cut_slice_r(count_x + 1, s[0][0], figure):
+                        # Add Figures to slice_list
+                        self.add_slice_to_solution_r([[s[0][0], s[0][1]], [s[1][0], count_x]])
+                        self.slice_list_r.append([[s[0][0], s[0][1]], [s[1][0], count_x]])
+                        #Second slice
+                        self.add_slice_to_solution_r([[s[0][0], count_x + 1], [s[0][0] + figure[0] - 1, count_x + figure[1]]])
+                        self.slice_list_r.append([[s[0][0], count_x + 1], [s[0][0] + figure[0] - 1, count_x + figure[1]]])
+                        break
+                    else:
+                        self.add_slice_to_solution_r(s)
+                        self.slice_list_r.append(s)
+                        break
+            else:
+                self.slice_list_r.append(s)
 
     def cut_first_approach(self):
         """
@@ -102,11 +197,11 @@ class Pizza:
                 # Hemos llegado al final de la matriz
                 if (x >= (self.c - 1)) & (y >= (self.r - 1)):
                     print_result(self.slice_list)
-                    #calculate_score(self.slice_list)
+                    calculate_score(self.slice_list)
                 else:
                     if not self.is_in_solution(x, y):
                         self.rx = self.r - y
-                        self.figures.sort(self.figure_Cmp, reverse=True)
+                        self.figures.sort(self.figure_CmpLim, reverse=True)
                         for figure in self.figures:
                             if self.can_cut_slice(x, y, figure):
                                 # Add Figure to slice_list
@@ -118,6 +213,18 @@ class Pizza:
         for i in range(slice[0][0], slice[1][0] + 1):
             for j in range(slice[0][1], slice[1][1] + 1):
                 self.px[i][j] = 1
+        return
+
+    def add_slice_to_solution_r(self, slice):
+        for i in range(slice[0][0], slice[1][0] + 1):
+            for j in range(slice[0][1], slice[1][1] + 1):
+                self.pxr[i][j] = 1
+        return
+
+    def empty_space(self, slice):
+        for i in range(slice[0][0], slice[1][0] + 1):
+            for j in range(slice[0][1], slice[1][1] + 1):
+                self.pxr[i][j] = 0
         return
 
     def next_cell(self, column, row):
@@ -157,6 +264,15 @@ class Pizza:
                     return False
         return True
 
+    def all_cells_are_free_r(self, x, y, figure):
+        # x + figure[0] & y + figure[1]
+        # no estan en slice_list
+        for indexX in range(x, x + figure[1]):
+            for indexY in range(y, y + figure[0]):
+                if self.is_in_solution_r(indexX, indexY):
+                    return False
+        return True
+
     def can_cut_slice(self, x, y, figure):
         if ((x + figure[1]) > self.c) | ((y + figure[0]) > self.r):
             return False
@@ -167,8 +283,21 @@ class Pizza:
                 return False
             return True
 
+    def can_cut_slice_r(self, x, y, figure):
+        if ((x + figure[1]) > self.c) | ((y + figure[0]) > self.r):
+            return False
+        else:
+            if not self.has_enough_ingredients(x, y, figure):
+                return False
+            elif not self.all_cells_are_free_r(x, y, figure):
+                return False
+            return True
+
     def is_in_solution(self, x, y):
         return self.px[y][x] == 1
+
+    def is_in_solution_r(self, x, y):
+        return self.pxr[y][x] == 1
 
 def print_result(result):
     sys.stdout = open(outFileName, "w")
@@ -185,11 +314,12 @@ def calculate_score(result):
     for slice_pizza in result:
         score = score + (((slice_pizza[1][0] - slice_pizza[0][0]) + 1) * ((slice_pizza[1][1] - slice_pizza[0][1]) + 1))
     print(score)
+    return score
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Cuts pizza.')
-    parser.add_argument("-f", "--file", default='example.in', type=argparse.FileType('r'), help='Filename with input data')
+    parser.add_argument("-f", "--file", default='c:\\Users\\jagariburo\\Documents\\Google Hash Code 2018\\HashCode2018_Pastutatis\\Pizza\\medium.in', type=argparse.FileType('r'), help='Filename with input data')
     args = parser.parse_args()
     lines = args.file.readlines()
     pizza = Pizza(lines[0].split())
@@ -200,4 +330,8 @@ if __name__ == '__main__':
     args.file.close()
     outFileName = args.file.name.split(".")[0] + ".out"
     pizza.create_figures()
-    pizza.cut_first_approach()
+    #pizza.cut_first_approach()
+    pizza.cut()
+
+    plt.matshow(pizza.pxr)
+    plt.show()
