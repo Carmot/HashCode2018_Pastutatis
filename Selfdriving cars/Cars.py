@@ -10,6 +10,7 @@ class Vehicle:
         self.location = [0, 0]
         self.n = 0
         self.rides = []
+        self.distance = 0
 
 class Ride:
     def __init__(self, values, n):
@@ -46,7 +47,7 @@ class Problem:
         print("Bonus: ", self.b)
         print("Steps: ", self.t)
 
-    def ridePoints(self):
+    def ridePointsInit(self):
         bonus = False
         points = 0
         for r in self.Rides: 
@@ -57,6 +58,29 @@ class Problem:
                 points = points + self.b
                 bonus = False
             r.points = points
+    
+    def ridePoints(self, carIndex):
+        """
+        Calculamos el mejor viaje para cada coche una vez que se han movido
+        """
+        bonus = False
+        previousPoints = 0
+        rideIndex = 0
+        points = 0
+        returnIndex = 0
+        for r in self.Rides: 
+            if (abs(self.Vehicles[carIndex].location[0] - r.start[0]) + abs(self.Vehicles[carIndex].location[1] - r.start[1]) + self.Vehicles[carIndex].distance) <= r.early:
+                bonus = True
+            if (abs(self.Vehicles[carIndex].location[0] - r.start[0]) + abs(self.Vehicles[carIndex].location[1] - r.start[1]) + self.Vehicles[carIndex].distance + abs(r.start[0] - r.end[0]) + abs(r.start[1] - r.end[1])) <= r.latest:
+                points = abs(r.start[0] - r.end[0]) + abs(r.start[1] - r.end[1])
+            if bonus:
+                points = points + self.b
+                bonus = False
+            r.points = points
+            if r.points > previousPoints:
+                returnIndex = rideIndex
+            rideIndex = rideIndex + 1
+        return returnIndex
 
     def Ride_CmpInit(self, ride1, ride2):
         """
@@ -69,50 +93,19 @@ class Problem:
         else:
             return -1
 
-    def Ride_Cmp(self, ride1, ride2):
-        mts1 = self.t
-        mts2 = self.t
-        m1 = 0
-        m2 = 0
-        h1 = self.t
-        h2 = self.t
-        for v in self.Vehicles:
-            movetostart1 = abs(ride1.start[0] - v.location[0]) + abs(ride1.start[1] - v.location[1])
-            movetostart2 = abs(ride2.start[0] - v.location[0]) + abs(ride2.start[1] - v.location[1])
-            if movetostart1 < mts1:
-                mts1 = movetostart1
-            if movetostart2 < mts2:
-                mts2 = movetostart2
-            move1 = abs(ride1.start[0] - ride1.end[0]) + abs(ride1.start[1] - ride1.end[1])
-            move2 = abs(ride2.start[0] - ride2.end[0]) + abs(ride2.start[1] - ride2.end[1])
-            if move1 > m1:
-                m1 = move1
-            if move2 > m2:
-                m2 = move2
-            hurry1 = ride1.latest
-            hurry2 = ride2.latest
-            if hurry1 < h1:
-                h1 = hurry1
-            if hurry2 < h2:
-                h2 = hurry2
-        if (mts1 <= mts2 and m1 >= m2 and h1 <= h2) or (mts1 > mts2 and m1 >= m2 and h1 <= h2) or (mts1 <= mts2 and m1 < m2 and h1 <= h2) or (mts1 <= mts2 and m1 >= m2 and h1 > h2):
-            return 1
-        else:
-            return -1
-
     def calculate_route(self):
         self.Rides.sort(self.Ride_CmpInit, reverse=True)
-        steps = self.iterate()
+        steps = self.iterate(True)
         """
         Tenemos los viajes con mayor puntuacion asignados
         Iteramos hasta llegar al numero de steps o no tener mas viajes.
         """
         while ((steps < self.t) and (len(self.Rides) > 0)):
-            self.Rides.sort(self.Ride_Cmp, reverse=True)
-            steps = steps + self.iterate()
+            self.Rides.sort(self.Ride_CmpInit, reverse=True)
+            steps = steps + self.iterate(False)
         return self.Vehicles
 
-    def iterate(self):
+    def iterate(self, initial):
         # Total steps, me voy a quedar con el menor
         mn = self.t
         for index in range(0, min(self.f, len(self.Rides))):
@@ -120,7 +113,11 @@ class Problem:
             Tenemos los viajes ordenador de mayor a menor puntuacion
             por lo tanto añadimos el primero al coche.
             """
-            self.Vehicles[index].rides.append(self.Rides[0])
+            if initial:
+                rI = 0
+            else:
+                rI = self.ridePoints(index)
+            self.Vehicles[index].rides.append(self.Rides[rI])
             self.Vehicles[index].n = self.Vehicles[index].n + 1
             """
             Calculamos las steps consumidas para ese viaje por este coche
@@ -135,7 +132,7 @@ class Problem:
             """
             Borramos el viaje puesto que ya lo hemos asignado
             """
-            self.Rides.remove(self.Rides[0])
+            self.Rides.remove(self.Rides[rI])
         """
         Devuelvo las menores steps consumidas por un viaje
         """            
@@ -146,6 +143,7 @@ class Problem:
         tmp = abs(self.Vehicles[i].location[0] - self.Rides[0].start[0]) + abs(self.Vehicles[i].location[1] - self.Rides[0].start[1])
         # Nos movemos al final del recorrido de este viaje
         tmp = tmp + self.Rides[0].distance
+        self.Vehicles[i].distance = tmp
         return tmp
 
     def move_car(self, vIndex):
@@ -185,6 +183,6 @@ if __name__ == '__main__':
     for line in lines[1:]:
         problems.Rides.append(Ride(line.split(), rideCounter))
         rideCounter = rideCounter + 1
-    problems.ridePoints()
+    problems.ridePointsInit()
     result = problems.calculate_route()
     print_result(result, outFile)
