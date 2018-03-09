@@ -21,7 +21,7 @@ class Ride:
         self.number = n
         self.distance = abs(self.end[0]-self.start[0]) + \
             abs(self.end[1]-self.start[1])
-        self.points = 0
+        self.points = 0.0
 
 class Problem:
     def __init__(self, values):
@@ -49,11 +49,12 @@ class Problem:
 
     def ridePointsInit(self):
         bonus = False
-        points = 0
+        points = 0.0
         for r in self.Rides: 
             if (r.start[0] + r.start[1]) <= r.early:
                 bonus = True
-            points = abs(r.start[0] - r.end[0]) + abs(r.start[1] - r.end[1])
+            points = 1.0 / (r.early - (r.start[0] + r.start[1]))
+            #abs(r.start[0] - r.end[0]) + abs(r.start[1] - r.end[1]) - (r.start[0] + r.start[1])
             if bonus:
                 points = points + self.b
                 bonus = False
@@ -72,12 +73,17 @@ class Problem:
             if (abs(self.Vehicles[carIndex].location[0] - r.start[0]) + abs(self.Vehicles[carIndex].location[1] - r.start[1]) + self.Vehicles[carIndex].distance) <= r.early:
                 bonus = True
             if (abs(self.Vehicles[carIndex].location[0] - r.start[0]) + abs(self.Vehicles[carIndex].location[1] - r.start[1]) + self.Vehicles[carIndex].distance + abs(r.start[0] - r.end[0]) + abs(r.start[1] - r.end[1])) <= r.latest:
-                points = abs(r.start[0] - r.end[0]) + abs(r.start[1] - r.end[1])
+                if (r.early - ((abs(self.Vehicles[carIndex].location[0] - r.start[0])) + (abs(self.Vehicles[carIndex].location[1] - r.start[1])))) == 0.0:
+                    points = self.b / 2
+                else:
+                    points = 1.0 / (r.early - ((abs(self.Vehicles[carIndex].location[0] - r.start[0])) + (abs(self.Vehicles[carIndex].location[1] - r.start[1]))))
+                #abs(r.start[0] - r.end[0]) + abs(r.start[1] - r.end[1]) - (abs(self.Vehicles[carIndex].location[0] - r.start[0]) + abs(self.Vehicles[carIndex].location[1] - r.start[1]))
             if bonus:
                 points = points + self.b
                 bonus = False
             r.points = points
             if r.points > previousPoints:
+                previousPoints = r.points
                 returnIndex = rideIndex
             rideIndex = rideIndex + 1
         return returnIndex
@@ -162,16 +168,18 @@ def print_result(vehiculesResult, o):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Spreading vehicles fleet arounde the city.')
-    parser.add_argument("-f", "--file", default='c:\\Users\\jagariburo\\Documents\\Google Hash Code 2018\\HashCode2018_Pastutatis\\Selfdriving cars\\a_example.in',
+    """
+    parser.add_argument("-f", "--file", default='C:\\git\\HashCode2018_Pastutatis\\Selfdriving cars\\a_example.in',
                         type=argparse.FileType('r'), help='Filename with input data.')
     """
-    parser.add_argument("-f", "--file", default='c:\\Users\\jagariburo\\Documents\\Google Hash Code 2018\\HashCode2018_Pastutatis\\Selfdriving cars\\b_should_be_easy.in',
+    parser.add_argument("-f", "--file", default='C:\\git\\HashCode2018_Pastutatis\\Selfdriving cars\\b_should_be_easy.in',
                         type=argparse.FileType('r'), help='Filename with input data.')
-    parser.add_argument("-f", "--file", default='c:\\Users\\jagariburo\\Documents\\Google Hash Code 2018\\HashCode2018_Pastutatis\\Selfdriving cars\\c_no_hurry.in',
+    """
+    parser.add_argument("-f", "--file", default='C:\\git\\HashCode2018_Pastutatis\\Selfdriving cars\\c_no_hurry.in',
                         type=argparse.FileType('r'), help='Filename with input data.')
-    parser.add_argument("-f", "--file", default='c:\\Users\\jagariburo\\Documents\\Google Hash Code 2018\\HashCode2018_Pastutatis\\Selfdriving cars\\d_metropolis.in',
+    parser.add_argument("-f", "--file", default='C:\\git\\HashCode2018_Pastutatis\\Selfdriving cars\\d_metropolis.in',
                         type=argparse.FileType('r'), help='Filename with input data.')
-    parser.add_argument("-f", "--file", default='c:\\Users\\jagariburo\\Documents\\Google Hash Code 2018\\HashCode2018_Pastutatis\\Selfdriving cars\\e_high_bonus.in',
+    parser.add_argument("-f", "--file", default='C:\\git\\HashCode2018_Pastutatis\\Selfdriving cars\\e_high_bonus.in',
                         type=argparse.FileType('r'), help='Filename with input data.')
     """
     args = parser.parse_args()
