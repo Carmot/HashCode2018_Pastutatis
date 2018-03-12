@@ -38,6 +38,8 @@ class Problem:
         self.b = int(values[4])
         self.t = int(values[5])
         self.Rides = []
+        self.averageX = 0.0
+        self.averageY = 0.0
 
     def __str__(self):
         print("Rows: ", self.r)
@@ -49,39 +51,43 @@ class Problem:
 
     def ridePointsInit(self):
         bonus = False
-        points = 0.0
         for r in self.Rides: 
             if (r.start[0] + r.start[1]) <= r.early:
                 bonus = True
-            points = 1.0 / (r.early - (r.start[0] + r.start[1]))
-            #abs(r.start[0] - r.end[0]) + abs(r.start[1] - r.end[1]) - (r.start[0] + r.start[1])
+            r.points = 1.0 / (r.early - (r.start[0] + r.start[1]))
+            r.points = r.points + (1.0 / (abs(r.end[0] - self.averageX) + abs(r.end[1] - self.averageY)))
             if bonus:
-                points = points + self.b
+                r.points = r.points + self.b
                 bonus = False
-            r.points = points
+    
+    def averagePoint(self):
+        self.averageX = self.Rides[0].start[0]
+        self.averageY = self.Rides[0].start[1]
+        for index in range(1, len(self.Rides)):
+            self.averageX = (self.averageX + self.Rides[index].start[0]) / 2.0
+            self.averageY = (self.averageY + self.Rides[index].start[1]) / 2.0
     
     def ridePoints(self, carIndex):
         """
         Calculamos el mejor viaje para cada coche una vez que se han movido
         """
         bonus = False
-        previousPoints = 0
+        previousPoints = -999999.99
         rideIndex = 0
-        points = 0
         returnIndex = 0
         for r in self.Rides: 
             if (abs(self.Vehicles[carIndex].location[0] - r.start[0]) + abs(self.Vehicles[carIndex].location[1] - r.start[1]) + self.Vehicles[carIndex].distance) <= r.early:
                 bonus = True
             if (abs(self.Vehicles[carIndex].location[0] - r.start[0]) + abs(self.Vehicles[carIndex].location[1] - r.start[1]) + self.Vehicles[carIndex].distance + abs(r.start[0] - r.end[0]) + abs(r.start[1] - r.end[1])) <= r.latest:
                 if (r.early - ((abs(self.Vehicles[carIndex].location[0] - r.start[0])) + (abs(self.Vehicles[carIndex].location[1] - r.start[1])))) == 0.0:
-                    points = self.b / 2
+                    r.points = (self.b / 2.0) + (1.0 / (abs(r.end[0] - self.averageX) + abs(r.end[1] - self.averageY)))
                 else:
-                    points = 1.0 / (r.early - ((abs(self.Vehicles[carIndex].location[0] - r.start[0])) + (abs(self.Vehicles[carIndex].location[1] - r.start[1]))))
+                    r.points = 1.0 / (r.early - ((abs(self.Vehicles[carIndex].location[0] - r.start[0])) + (abs(self.Vehicles[carIndex].location[1] - r.start[1]))))
+                    r.points = r.points + (1.0 / (abs(r.end[0] - self.averageX) + abs(r.end[1] - self.averageY)))
                 #abs(r.start[0] - r.end[0]) + abs(r.start[1] - r.end[1]) - (abs(self.Vehicles[carIndex].location[0] - r.start[0]) + abs(self.Vehicles[carIndex].location[1] - r.start[1]))
             if bonus:
-                points = points + self.b
+                r.points = r.points + self.b
                 bonus = False
-            r.points = points
             if r.points > previousPoints:
                 previousPoints = r.points
                 returnIndex = rideIndex
@@ -172,7 +178,7 @@ if __name__ == '__main__':
     parser.add_argument("-f", "--file", default='C:\\git\\HashCode2018_Pastutatis\\Selfdriving cars\\a_example.in',
                         type=argparse.FileType('r'), help='Filename with input data.')
     """
-    parser.add_argument("-f", "--file", default='C:\\git\\HashCode2018_Pastutatis\\Selfdriving cars\\b_should_be_easy.in',
+    parser.add_argument("-f", "--file", default='C:\\Users\\jagariburo\\Documents\\Google Hash Code 2018\\HashCode2018_Pastutatis\\Selfdriving cars\\b_should_be_easy.in',
                         type=argparse.FileType('r'), help='Filename with input data.')
     """
     parser.add_argument("-f", "--file", default='C:\\git\\HashCode2018_Pastutatis\\Selfdriving cars\\c_no_hurry.in',
@@ -192,5 +198,6 @@ if __name__ == '__main__':
         problems.Rides.append(Ride(line.split(), rideCounter))
         rideCounter = rideCounter + 1
     problems.ridePointsInit()
+    problems.averagePoint()
     result = problems.calculate_route()
     print_result(result, outFile)
